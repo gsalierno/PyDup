@@ -55,4 +55,7 @@ class Parser:
 
 		return quaestiones
 
+	def printDoc():
+		doe
+
 
