@@ -1,3 +1,3 @@
 # PyDup
-# from unstruct word doc to struct data
+from unstructured word document to (possibly) structured data
 
