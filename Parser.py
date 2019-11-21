@@ -63,10 +63,9 @@ class Parser:
 			qa.append(l[r[0]:r[1]])
 
 		qa_filtered = self.prefilteringQA(qa) #prefilter chunks
-		return self.createQAdictionary(qa_filtered)
+		#return self.createQAdictionary(qa_filtered)
 
-
-
+		print(self.prefilteringA(qa_filtered))
 
 	#return self.createQAdictionary(qa)
 		# Aggregate consecutive lists as single Q+A
@@ -79,7 +78,7 @@ class Parser:
 		for i in range(len(list_qa)):
 			if (self.qaEstimator(list_qa[i]) == "Q+A"): #if chunk represent a Q+A
 				c1,c2 = self.filterQAchunk(list_qa[i]) #filter and split the chunk if possible
-				if(c1 != None and c2!=None): #store position and new chunks
+				if(c1 != None and c2 != None): #store position and new chunks
 					chunks.append((i,c1,c2))
 		#update qa list
 		for ch in chunks:
@@ -88,6 +87,12 @@ class Parser:
 			list_qa.insert(ch[0]+1,ch[2]) #insert new question
 
 		return list_qa
+
+	def prefilteringA(self,list_qa):
+		for chunk in list_qa:
+			if(self.qaEstimator(chunk) == "A"):
+				if re.match('^[0-9]+.', chunk[1]):
+					self.splitmultipleQA(chunk)
 
 	def createQAdictionary(self, qa_list):
 		qadict = {}
@@ -99,6 +104,7 @@ class Parser:
 				qadict[quest] = answ
 		return qadict
 
+	#Give a chunk build a dictionary of question as keys and answers as values
 	def splitQA(self, QA):
 		# preprocessing and cleaning Q+A
 		# remove special characters
@@ -107,8 +113,26 @@ class Parser:
 		qarr = Q.split('. ')  # ignore numeration
 		if (len(qarr) > 1):
 			qac[0] = qarr[1]  # set clean question
-
 		return qac[0], qac[1:]
+
+	#split multiple Q+A in A chunks
+	def splitmultipleQA(self,chunk):
+		qa_split = []
+		index_q = -1
+		finished = True
+		for i in range(len(chunk)):
+			if finished == True and re.match('^[0-9]+.', chunk[i]):
+				index_q = i #store the index of begin of a question
+				finished = False
+				#print(str(index_q),chunk[i])
+			elif finished == False and re.match('^[0-9]+.', chunk[i]): #previous question is finished a new one must be extracted
+				qa_split.append(chunk[index_q:i])
+				index_q = -1 #restart index for next question
+				finished = True
+			else:
+				continue
+		print(qa_split)
+
 
 	# given a list determine if it is a question or an answer
 	def qaEstimator(self, list_qa):
@@ -144,7 +168,7 @@ class Parser:
 			return False
 
 
-	#since some Q+A chunks aggregate different questions and answers this method split them into single chunks
+	#since some Q+A chunks aggregate different (two) questions and answers this method split them into single chunks
 	def filterQAchunk(self, chunk):
 			match = re.findall('[0-9]+.', str(chunk))
 			#if multiple match exists

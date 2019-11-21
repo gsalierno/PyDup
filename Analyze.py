@@ -3,5 +3,5 @@ from Parser import Parser
 
 p = Parser('../OSBDD.docx')
 
-p.printDocument()
+#p.printDocument()
 #p.writeDictToFile()
