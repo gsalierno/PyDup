@@ -61,11 +61,11 @@ class Parser:
 		qa = []
 		for r in range_qa:
 			qa.append(l[r[0]:r[1]])
+		qa_filtered = self.prefilteringA(self.prefilteringQA(qa)) # apply filter to extract question and answers from chunks
 
-		qa_filtered = self.prefilteringQA(qa) #prefilter chunks
-		#return self.createQAdictionary(qa_filtered)
-
-		print(self.prefilteringA(qa_filtered))
+		#check correctness
+		for qa in qa_filtered:
+			print(qa, "ESTIMATOR: ",self.qaEstimator(qa))
 
 	#return self.createQAdictionary(qa)
 		# Aggregate consecutive lists as single Q+A
@@ -89,20 +89,21 @@ class Parser:
 		return list_qa
 
 	def prefilteringA(self,list_qa):
+		replace=[]
 		for chunk in list_qa:
 			if(self.qaEstimator(chunk) == "A"):
 				if re.match('^[0-9]+.', chunk[1]):
-					self.splitmultipleQA(chunk)
+					extracted = self.splitmultipleQA(chunk)
+					if(len(extracted) > 0 ): #if extract multiple questions store and replace them
+						replace.append((chunk,extracted))
 
-	def createQAdictionary(self, qa_list):
-		qadict = {}
-		for elem in qa_list:
-			#print(elem, "OUTPUT: ", self.qaEstimator(elem),"\n")
-			if (self.qaEstimator(elem) == "Q+A"):
-				self.filterQAchunk(elem)
-				quest, answ = self.splitQA(elem)
-				qadict[quest] = answ
-		return qadict
+		for elem in replace:
+			index = list_qa.index(elem[0])
+			list_qa.remove(elem[0])
+			list_qa.insert(index, elem[1]) #remove chunk and add new extracted question and answers
+		return list_qa
+
+
 
 	#Give a chunk build a dictionary of question as keys and answers as values
 	def splitQA(self, QA):
@@ -118,20 +119,15 @@ class Parser:
 	#split multiple Q+A in A chunks
 	def splitmultipleQA(self,chunk):
 		qa_split = []
-		index_q = -1
-		finished = True
+		#re.match('^[0-9]+.', chunk[i])
 		for i in range(len(chunk)):
-			if finished == True and re.match('^[0-9]+.', chunk[i]):
-				index_q = i #store the index of begin of a question
-				finished = False
-				#print(str(index_q),chunk[i])
-			elif finished == False and re.match('^[0-9]+.', chunk[i]): #previous question is finished a new one must be extracted
-				qa_split.append(chunk[index_q:i])
-				index_q = -1 #restart index for next question
-				finished = True
-			else:
-				continue
-		print(qa_split)
+			if re.match('^[0-9]+.', chunk[i]):
+				qa_split.append(i) #store the index of the split
+		qa_extracted = []
+		#split the chunk considering begin,end of each chunk
+		for beg, end in zip(qa_split[:-1], qa_split[1:]):
+			qa_extracted.append(chunk[beg:end])
+		return qa_extracted
 
 
 	# given a list determine if it is a question or an answer
@@ -141,7 +137,7 @@ class Parser:
 		for elem in list_qa:
 			if "____________________________________________________" in elem:
 				return "Q+A"  # it is a question
-			elif re.match('^[0-9]+.', elem):
+			elif re.match('^[0-9]+.', str(elem)):
 				pm = pm + 1
 
 		if (len(list_qa) > 4 and re.match('^[A-Z0-9]+.', list_qa[1]) and self.checkNumberofAnswersQ(list_qa)):  # it is an answer weak condition
@@ -192,6 +188,15 @@ class Parser:
 				# update key
 				self.quaestiones[k] = self.quaestiones.pop(k_old)
 
+	#	def createQAdictionary(self, qa_list):
+	#		qadict = {}
+	#		for elem in qa_list:
+	#			#print(elem, "OUTPUT: ", self.qaEstimator(elem),"\n")
+	#			if (self.qaEstimator(elem) == "Q+A"):
+	#				self.filterQAchunk(elem)
+	#				quest, answ = self.splitQA(elem)
+	#				qadict[quest] = answ
+	#		return qadict
 
 	def printDocument(self):
 		# print dictionary
