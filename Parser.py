@@ -68,9 +68,10 @@ class Parser:
         qa_filtered = self.prefilteringQA(a_filtered)
         #FILTER Q
         q_filtered = self.prefilteringQ(qa_filtered)
+        #FILTER A Q
+        aq_filtered = self.prefilterAQ((q_filtered))
         # aggregate Q A chunks
-        qa_aggr = self.aggregateChunks(q_filtered)
-
+        qa_aggr = self.aggregateChunks(aq_filtered)
 
         for qa in qa_aggr:
             print(qa, "ESTIMATOR: ", self.qaEstimator(qa))
@@ -95,8 +96,10 @@ class Parser:
                 list_qa.insert(index_first, elem[2]) # insert join of Q+A
             except ValueError:
                 print("INDEX NOT FOUND: ", elem, ValueError)
+        # delete only chunks representing only answers
+        list_qa_clean = [x for x in list_qa if not self.qaEstimator(x) == "A"]
 
-        return list_qa
+        return list_qa_clean
 
 
 
@@ -151,6 +154,26 @@ class Parser:
                 index = index+1
         return list_qa
 
+    #split the chunk that aggregates a+q
+    def prefilterAQ(self, list_qa):
+        list_extracted_index = []
+        for chunk in list_qa:
+            if(self.qaEstimator(chunk) == "Q+A"):
+                occ = 0
+                for elem in chunk:
+                    if re.match('^[0-9]+.', elem):
+                        if(occ < 4):
+                            occ = occ + 1
+                        else:
+                            split_index = chunk.index(elem)
+                            list_extracted_index.append((list_qa.index(chunk),chunk[0:split_index],chunk[split_index:])) #store the index for replacement and splitted chunks
+
+                #update original list
+                for elem in list_extracted_index:
+                    del list_qa[elem[0]] #delete aggregate chunks
+                    list_qa.insert(elem[0],elem[1]) #store new chunk
+                    list_qa.insert(elem[0] + 1, elem[2]) #store new chunk
+        return list_qa
 
     # split multiple Q+A in different chunks
     def splitmultipleQA(self, chunk):
