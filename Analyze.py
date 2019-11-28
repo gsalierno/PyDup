@@ -1,7 +1,7 @@
 from Parser import Parser
 
 
-p = Parser('../OSBDD.docx')
+p = Parser('../OSBDD_bckp_2.docx')
 
-#p.printDocument()
-#p.writeDictToFile()
+p.print_dict()
+p.writeDictToFile()

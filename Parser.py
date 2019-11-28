@@ -1,29 +1,34 @@
 from docx import Document
 from itertools import groupby
 from operator import itemgetter
+import csv
 import re
 import itertools
+
+
 
 
 class Parser:
 
     def __init__(self, document):
         self.document = self.getText(Document(document))
-        self.quaestiones = self.extractQA()
-        #self.cleanDictionary()
+        self.quaestiones = self.extractQA() #create dictionary
+        self.cleanDictionary() #clean the dictionary
 
     def getText(self, document):
         doc = document
         fullText = []
         for para in doc.paragraphs:
             fullText.append(para.text)
-
         return '\n'.join(fullText)
 
     def writeDictToFile(self):
-        with open("dict.txt", "w+") as f:
-            f.write(str(self.quaestiones))
-            f.close()
+        with open('dict.csv', 'w', newline="") as csv_file:
+            writer = csv.writer(csv_file)
+            for key, value in self.quaestiones.items():
+                writer.writerow([key, value])
+
+
 
     # extract chunks of QA from unstructured messy text imported from word doc
     def extractQA(self):
@@ -73,9 +78,6 @@ class Parser:
         # aggregate Q A chunks
         qa_aggr = self.aggregateChunks(aq_filtered)
 
-        for qa in qa_aggr:
-            print(qa, "ESTIMATOR: ", self.qaEstimator(qa))
-
         return self.createQAdictionary(qa_aggr)
 
 
@@ -90,16 +92,16 @@ class Parser:
         for elem in join:
             try:
                 index_first = list_qa.index(elem[0]) #retrieve original elem
-                index_second =  list_qa.index(elem[1])
+                #index_second =  list_qa.index(elem[1]) #repeated element deletion bug
                 del list_qa[index_first] #remove old chunk q
-                del list_qa[index_second] #remove old chunk a
+                #del list_qa[index_second] #remove old chunk a
                 list_qa.insert(index_first, elem[2]) # insert join of Q+A
             except ValueError:
-                print("INDEX NOT FOUND: ", elem, ValueError)
+                print("INDEX NOT FOUND: ", elem[0], ValueError)
         # delete only chunks representing only answers
-        list_qa_clean = [x for x in list_qa if not self.qaEstimator(x) == "A"]
+        #list_qa_clean = [x for x in list_qa if not self.qaEstimator(x) == "A"]
 
-        return list_qa_clean
+        return list_qa
 
 
 
@@ -117,7 +119,7 @@ class Parser:
             for qa in elem[1]: #append newest
                 #print(qa)
                 list_qa.insert(index, qa)  # remove chunk and add new extracted question and answers
-                index = index+1
+                index = index + 1
         return list_qa
 
     def prefilteringA(self, list_qa):
@@ -235,12 +237,13 @@ class Parser:
                         return chunk[0:i], chunk[i:]  # split into two chunks
         return None, None
 
-    # uniform format for answers
+    # uniform format for questions
     def cleanDictionary(self):
-        for k in self.quaestiones.keys():
-            if re.search('\s\t', str(k)):  # if answer contains space and tabs
+        for k in list(self.quaestiones):
+            if re.search('\s\t', str(k)):  # if question contains space and tabs
                 k_old = k
                 k = re.sub('\s\t', '', str(k))
+                k = re.sub('^\s\s', '', str(k))
                 # update key
                 self.quaestiones[k] = self.quaestiones.pop(k_old)
 
@@ -248,8 +251,8 @@ class Parser:
             qadict = {}
             for elem in qa_list:
                 #print(elem, "OUTPUT: ", self.qaEstimator(elem),"\n")
-                if (self.qaEstimator(elem) == "Q+A"):
-                    self.filterQAchunk(elem)
+                #if (self.qaEstimator(elem) == "Q+A"):
+                #   self.filterQAchunk(elem)
                     quest, answ = self.splitQA(elem)
                     qadict[quest] = answ
             return qadict
@@ -265,7 +268,15 @@ class Parser:
             qac[0] = qarr[1]  # set clean question
         return qac[0], qac[1:]
 
-    def printDocument(self):
+    def print_dict(self):
         # print dictionary
         for k in self.quaestiones.keys():
+            #if(len(self.quaestiones[k]) == 0):
             print("Question: ", k, " Answer: ", self.quaestiones[k])
+
+def readDict(path):
+    dict = {}
+    with open('dict.csv') as csv_file:
+        reader = csv.reader(csv_file)
+        dict = dict(reader)
+    return dict
