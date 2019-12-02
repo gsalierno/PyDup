@@ -274,9 +274,3 @@ class Parser:
             #if(len(self.quaestiones[k]) == 0):
             print("Question: ", k, " Answer: ", self.quaestiones[k])
 
-def readDict(path):
-    dict = {}
-    with open('dict.csv') as csv_file:
-        reader = csv.reader(csv_file)
-        dict = dict(reader)
-    return dict
