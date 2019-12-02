@@ -5,7 +5,9 @@ import nltk
 import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-
+from sklearn.cluster import KMeans
+from sklearn.neighbors.kd_tree import KDTree
+import pandas as pd
 
 def readDictFromFile(path):
     dict = {}
@@ -62,9 +64,13 @@ def clean_quest(questions):
         # Normalize all charachters to lowercase
         clean_text = no_spaces.lower();
         # Get sentences from the NLTK tokenizer, remove the dot in each.
-        sentences = word_tokenize(clean_text)
-        sentences = [re.sub("[\.]", "", sentence) for sentence in sentences]
-        sent.append(sentences)
+        word_tokens = word_tokenize(clean_text)
+        word_tokens = [re.sub("[\.]", "", t) for t in word_tokens]
+        #removing stopwords
+        stop_words = set(stopwords.words('italian'))
+        filtered_sentence = [w for w in word_tokens if not w in stop_words]
+        sent.append(filtered_sentence)
+
     return sent
 
 
@@ -74,6 +80,7 @@ questions = readDictFromFile('../questions_raw_cleaned.txt')
 
 # PREPROCESSING
 sentences = clean_quest(list(questions.keys()))
+
 # TRAIN WORD2VEC MODEL
 model = Word2Vec(sentences, min_count=2)
 X = []
@@ -81,10 +88,17 @@ for sentence in sentences:
     X.append(sent_vectorizer(sentence, model))
 print("========================")
 # CLUSTERING WITH K-MEANS
-NUM_CLUSTERS = 5
-kclusterer = KMeansClusterer(NUM_CLUSTERS, distance=nltk.cluster.util.cosine_distance)
-assigned_clusters = kclusterer.cluster(X, assign_clusters=True)
-print(assigned_clusters)
+def clustering_on_wordvecs(word_vectors, num_clusters):
+    # Initalize a k-means object and use it to extract centroids
+    #kmeans_clustering = KMeans(n_clusters=num_clusters, init='k-means++');
+    #idx = kmeans_clustering.fit_predict(word_vectors);
+    kclusterer = KMeansClusterer(num_clusters, distance=nltk.cluster.util.cosine_distance, repeats=25)
+    assigned_clusters = kclusterer.cluster(X, assign_clusters=True)
 
-for index, sentence in enumerate(sentences):
-    print(str(assigned_clusters[index]) + ":" + str(sentence))
+    return assigned_clusters
+
+Z = model.wv.syn0;
+clusters = clustering_on_wordvecs(Z, 4)
+
+for index, sentence in enumerate(questions.keys()):
+    print(str(clusters[index]) + ":" + str(sentence))
