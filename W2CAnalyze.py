@@ -5,9 +5,7 @@ import nltk
 import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from sklearn.cluster import KMeans
-from sklearn.neighbors.kd_tree import KDTree
-import pandas as pd
+
 
 def readDictFromFile(path):
     dict = {}
