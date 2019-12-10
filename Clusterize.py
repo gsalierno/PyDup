@@ -1,3 +1,6 @@
+#topic cluster
+categories = ["process", "memoria virtuale", "memoria secondaria", "scheduler", "deadlock","file",'unix',"xv6"]
+
 def readDictFromFile(path):
     dict = {}
     with open(path) as dict_file:
@@ -47,8 +50,10 @@ def build_topic_list(cluster_topic, question_dict):
     # compute residual list
     residual_list = [x for x in questions.keys() if x not in merge_list]
     # add residuals to the topic list
-    topic_list.append(("Residual topic", residual_list))
+    topic_list.append(("Miscellanea", residual_list))
     return topic_list
+
+
 
 
 def print_topic_list(topic_list):
@@ -64,11 +69,18 @@ def print_dict(quest_dict):
         print("ANSWERS: ", quest_dict[k][0])
 
 
-categories = ["xv6", 'unix', "memoria virtuale", "memoria", "process", "scheduler", "file", "deadlock"]
+def clusterize_questions(quest_path):
+    # load questions dict
+    questions = readDictFromFile(quest_path)
+    # build topic list
+    topic_list = build_topic_list(categories, questions)
+    return topic_list, questions
+
+
+
 # load questions dict
 questions = readDictFromFile('../questions_raw_cleaned_aggregated.txt')
 # build topic list
 topic_list = build_topic_list(categories, questions)
 # print topic list
-# print_topic_list(topic_list)
-# print_dict(questions)
+#print_topic_list(topic_list)

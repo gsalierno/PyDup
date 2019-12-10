@@ -1,4 +1,3 @@
-from docx import Document
 from itertools import groupby
 from operator import itemgetter
 import csv
