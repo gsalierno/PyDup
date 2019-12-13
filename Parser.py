@@ -1,8 +1,8 @@
 from itertools import groupby
 from operator import itemgetter
+from docx import Document
 import csv
 import re
-import itertools
 
 
 

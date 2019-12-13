@@ -23,7 +23,6 @@ def clean_split_answer(a):
     a = a.split("','")
     # strip \n from all elements in this list
     stripped_answ = [s.rstrip() for s in a]
-    print(stripped_answ)
     return stripped_answ
 
 
